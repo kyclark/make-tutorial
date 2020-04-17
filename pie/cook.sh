@@ -1,9 +1,10 @@
 #!/bin/bash
 
-if [[ $# -eq 2 ]]; then
-    TEMP=$1
-    TIME=$2
-    echo "Will cook at ${TEMP} degrees for ${TIME} minutes"
+if [[ $# -eq 3 ]]; then
+    ITEM=$1
+    TEMP=$2
+    TIME=$3
+    echo "Will cook \"${ITEM}\" at ${TEMP} degrees for ${TIME} minutes."
 else
-    echo "usage: $(basename $0) TEMP TIME"
+    echo "usage: $(basename $0) ITEM TEMP TIME"
 fi

@@ -17,29 +17,36 @@ image::images/string.jpg[align="center"]
 It's not really important if you make the pie crust the day before and keep it chilled, and the same might hold true for the filling, but it's certainly true that the crust needs to go into the dish followed by the filling and finally the meringue.
 An actual recipe might refer to a generic recipes for the crust and meringue in parts of the book and list the steps just for the lemon filling and baking instructions.
 
-We can write a `Makefile` to mock up these ideas where we have Python pro
+We can write a `Makefile` to mock up these ideas.
+We'll use shell scripts to pretend we're assembling the various ingredients into some output like a "crust" or "filling."
+In an actual `make` workflow, the output of a step will often be some new file, but sometimes actions 
 
 ----
-all: crust filling meringue              <1>
-	./combine.sh crust filling meringue  <2>
+all: crust.txt filling.txt meringue.txt <1>
+	./combine.sh crust filling meringue <2>
 	./cook.sh 375 45
 
-filling:                                 <3>
-	./combine.sh lemon butter sugar      <4>
+filling.txt:                            <3>
+	./combine.sh filling.txt lemon butter sugar
 
-meringue:                                <5>
-	./combine.sh eggwhites sugar
+meringue.txt:                           <4>
+	./combine.sh meringue.txt eggwhites sugar
 
-crust:                                   <6>
-	./combine.sh flour butter water
+crust.txt:                              <5>
+	./combine.sh crust.txt flour butter water
+
+clean:                                  <6>
+	rm -f crust.txt meringue.txt filling.txt
 ----
 
-<1> This defines a target called `all`. The first target will be the one run when no target is specified. Convention holds that the `all` target will run _all_ the commands, but the name is not as important as it being defined first. The target name is followed by a colon and then any dependencies that must be satisfied before running this target.
+<1> This defines a target called `all`. The first target will be the one run when no target is specified. Convention holds that the `all` target will run _all_ the targets necessary to accomplish some default goal like building a piece of software. The name is not as important as it being defined first. The target name is followed by a colon and then any dependencies that must be satisfied before running this target.
 <2> The `all` target has two commands to run. Each command is indented with a `Tab` character.
-<3> This is the `filling` target.
-<4> This target has just one command which is to combine the ingredients for the filling.
-<5> This is the `meringue` target, and it combines the egg whites and sugar.
-<6> This is the `crust` target that combines flour, butter, and water.
+<3> This is the `filling.txt` target. The goal of this target is to create the file called "filling.txt". It's common but not necessary to use the output file name as the target name. This target has just one command which is to combine the ingredients for the filling.
+<4> This is the `meringue.txt` target, and it combines the egg whites and sugar.
+<5> This is the `crust.txt` target that combines flour, butter, and water.
+<6> It's common to have a `clean` target to remove any files that were created in the normal course of building.
+
+== Running a specific target
 
 Each recipe in a `Makefile` is called a "target," and it doesn't matter the order that you define them in the file.
 It's common for the first target to be called "all" (or something like that) and for this target to run "all" commands necessary to produce some output (usually the creation of some program).
@@ -47,37 +54,83 @@ It's common for the first target to be called "all" (or something like that) and
 We can run `make <target>` to have `make` run the commands for a given recipe:
 
 ----
-$ make filling
-./combine.sh lemon butter sugar
+$ make filling.txt
+./combine.sh filling.txt lemon butter sugar
+----
+
+And now there is a file called `filling.txt`:
+
+----
+$ cat filling.txt
 Will combine lemon butter sugar
 ----
+
+If we try to run this target again, we'll be told there's nothing to do because the file already exists:
+
+----
+$ make filling.txt
+make: `filling.txt' is up to date.
+----
+
+We can either forcibly remove the file or run `make clean` to remove any of the files that have been created:
+
+----
+$ make clean
+rm -f crust.txt meringue.txt filling.txt pie.txt
+----
+
+== Running with no target
 
 If you run the `make` command with no arguments, and it will automatically run the first target which is another reason to put this first.
 Let's run `make` with the above `Makefile` and see the output:
 
 ----
-$ make                                     <1>
-./combine.sh flour butter water            <2>
-Will combine flour butter water
-./combine.sh lemon butter sugar            <3>
-Will combine lemon butter sugar
-./combine.sh eggwhites sugar               <4>
-Will combine eggwhites sugar
-./combine.sh crust filling meringue        <5>
-Will combine crust filling meringue
-./cook.sh 375 45                           <6>
-Will cook at 375 degrees for 45 minutes
+$ make                                                  <1>
+./combine.sh crust.txt flour butter water               <2>
+./combine.sh filling.txt lemon butter sugar             <3>
+./combine.sh meringue.txt eggwhites sugar               <4>
+./combine.sh pie.txt crust.txt filling.txt meringue.txt <5>
+./cook.sh pie.txt 375 45                                <6>
+Will cook "pie.txt" at 375 degrees for 45 minutes.
 ----
 
 <1> We run `make` with no arguments. It looks for the first target in a file called `Makefile` in the current working directory.
-<2> The `crust` recipe is being run first. Because we didn't specify a target, `make` runs the `all` target which is defined first. This target lists the `crust` as it's first dependency, and so that is why it is run first.
-<3> Next the `filling` target is run.
-<4> Followed by the `meringue`.
-<5> Next we assemble the pie.
+<2> The `crust.txt` recipe is being run first. Because we didn't specify a target, `make` runs the `all` target which is defined first, and this target lists the `crust.txt` as it's first dependency.
+<3> Next the `filling.txt` target is run.
+<4> Followed by the `meringue.txt`.
+<5> Next we assemble `pie.txt`.
 <6> And then we "cook" the pie at 375 degrees for 45 minutes.
+
+If you run `make` again, you'll see the intermediate steps to produce the `crust.txt`, `filling.txt`, and `meringue.txt` files are skipped because those files already exist:
+
+----
+$ make
+./combine.sh pie.txt crust.txt filling.txt meringue.txt
+./cook.sh pie.txt 375 45
+Will cook "pie.txt" at 375 degrees for 45 minutes.
+----
+
+If you want to force them to be recreated, you can run `make clean && make`:
+
+----
+$ make clean && make
+rm -f crust.txt meringue.txt filling.txt pie.txt
+./combine.sh crust.txt flour butter water
+./combine.sh filling.txt lemon butter sugar
+./combine.sh meringue.txt eggwhites sugar
+./combine.sh pie.txt crust.txt filling.txt meringue.txt
+./cook.sh pie.txt 375 45
+Will cook "pie.txt" at 375 degrees for 45 minutes.
+----
+
+== Makefiles create DAGs
 
 Each target can specify other targets as prerequisites or dependencies that must be accomplished first.
 These actions create a graph structure where there is some starting point and paths through targets to finally create some output file(s).
+The path described for any target should be a _directed_ (from a start to a stop) _acyclic_ (having no cycles or infinite loops) _graph_ or a DAG:
+
+image::images/flowchart.png[align="center"]
+
 Many analysis pipelines are just that -- a graph of some input like a FASTA sequence file and some transformations (trimming, filtering, comparisons) into some output (e.g., BLAST hits, gene predictions, functional annotations).
 You would be surprised at just how far `make` can be abused to document your work and even create fully functional analysis pipelines!
 
@@ -228,7 +281,7 @@ You can also use `strings hello` to extract just the "strings" of text.
 
 == Using `make` for a shortcut
 
-Let's start off with how to abuse Makefiles to create shortcuts for commands.
+Let's look at how we can abuse Makefiles to create shortcuts for commands.
 Here we will say "Hello, World!" on the command line using the `echo` command:
 
 ----
@@ -241,6 +294,10 @@ hello:                   <2>
 <1> Since the `hello` target doesn't actually produce a file, we list it as a "phony" target.
 <2> This is the `hello` target. The name of the target should be composed only of letters and numbers, should have no spaces before it, and is followed by a colon (`:`).
 <3> The command(s) to run for the `hello` target are listed on lines that are indented with a tab character.
+
+I often use a `Makefile` only to remember how to invoke a command with various arguments.
+That is, I might write an analysis pipeline and then document how to run the program on various data sets with all their parameters.
+In this way I'm documenting my work in a way that I can immediately reproduce it simply by running the target!
 
 == Writing a workflow to find unclustered proteins
 

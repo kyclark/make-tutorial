@@ -4,6 +4,7 @@ all: clean fasta genome chr-count chr-size features gene-count verified-genes un
 
 clean:
 	find . \( -name \*gene\* -o -name chr-\* \) -exec rm {} \;
+	rm -rf fasta SGD_features.tab
 
 fasta:
 	./download.sh
@@ -25,20 +26,15 @@ gene-count: features
 
 verified-genes: features
 	awk -F"\t" '$$3 == "Verified" {print}' SGD_features.tab | wc -l > verified-genes
-#awk -F"\t" '$$2 == "ORF" && $$3 == "Verified" {print $$2}' SGD_features.tab | wc -l > verified-genes
 
 uncharacterized-genes: features
 	awk -F"\t" '$$2 == "ORF" && $$3 == "Uncharacterized" {print $$2}' SGD_features.tab | wc -l > uncharacterized-genes
 
 gene-types: features
 	awk -F"\t" '{print $$3}' SGD_features.tab | sort | uniq -c > gene-types
-	#cut -f 3 SGD_features.tab | sort | uniq -c > gene-types
 
-palinsreg:
-	unzip palinsreg.txt.gz
-
-terminated-genes: palinsreg
+terminated-genes: 
 	grep -o '/G=[^ ]*' palinsreg.txt | cut -d = -f 2 | sort -u > terminated-genes
 
 test:
-	./test.py
+	pytest -xv ./test.py

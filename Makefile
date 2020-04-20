@@ -1,5 +1,5 @@
 makefiles.pdf: clean
-	asciidoctor-pdf -a imagesdir=. makefiles.adoc && open makefiles.pdf
+	asciidoctor-pdf -a imagesdir=. README.adoc -o makefiles.pdf && open makefiles.pdf
 
 clean:
 	rm -f makefiles.pdf

@@ -365,7 +365,7 @@ In this way I'm documenting my work in a way that I can immediately reproduce it
 Here is an example of a `Makefile` I wrote to document how I ran the Centrifuge app for making taxonomic assignments to short reads:
 
 ----
-INDEX_DIR = /data/centrifuge-indexes.        <1>
+INDEX_DIR = /data/centrifuge-indexes         <1>
 
 clean_paired:
     rm -rf $(HOME)/work/data/centrifuge/paired-out
@@ -383,8 +383,8 @@ paired: clean_paired                         <2>
 <1> Here I define the variable `INDEX_DIR` and assign a value. Note that there must be spaces on either side of the `=`. I prefer ALL_CAPS for my variable names, but this just personal preference.
 <2> Run the `clean_paired` target prior to running this target. This ensures that there is no leftover output from a previous run.
 <3> This action is long, so I used backslashes `\` as on the command line to indicate the command continues to the next line.
-<4> To have `make` use the value of the variable, I deference like `$(VAR)`. Here I show that I can use the environmental variable `$HOME` as the `$(HOME)`.
-<5> The `$(INDEX_DIR)` refers to the variable I defined at the top.
+<4> To have `make` use the value of the variable, you deference like `$(VAR)`. Here we can use the environmental variable `$HOME` as the `$(HOME)`.
+<5> The `$(INDEX_DIR)` refers to the variable defined at the top.
 
 == Writing a workflow
 
@@ -395,7 +395,9 @@ This is accomplished with a collection of command-line tools such as `wget`, `gr
 ----
 .PHONY: all fasta features test clean
 
-all: clean fasta genome chr-count chr-size features gene-count verified-genes uncharacterized-genes gene-types terminated-genes
+FEATURES = http://downloads.yeastgenome.org/curation/chromosomal_feature/SGD_features.tab
+
+all: fasta genome chr-count chr-size features gene-count verified-genes uncharacterized-genes gene-types terminated-genes test
 
 clean:
 	find . \( -name \*gene\* -o -name chr-\* \) -exec rm {} \;
@@ -414,22 +416,25 @@ chr-size: genome
 	grep -ve '^>' "fasta/genome.fa" | wc -c > chr-size
 
 features:
-	wget -nc http://downloads.yeastgenome.org/curation/chromosomal_feature/SGD_features.tab
+	wget -nc $(FEATURES)
 
 gene-count: features
 	cut -f 2 SGD_features.tab | grep ORF | wc -l > gene-count
 
 verified-genes: features
-	awk -F"\t" '$$3 == "Verified" {print}' SGD_features.tab | wc -l > verified-genes
+	awk -F"\t" '$$3 == "Verified" {print}' SGD_features.tab | \
+		wc -l > verified-genes
 
 uncharacterized-genes: features
-	awk -F"\t" '$$2 == "ORF" && $$3 == "Uncharacterized" {print $$2}' SGD_features.tab | wc -l > uncharacterized-genes
+	awk -F"\t" '$$2 == "ORF" && $$3 == "Uncharacterized" {print $$2}' \
+		SGD_features.tab | wc -l > uncharacterized-genes
 
 gene-types: features
 	awk -F"\t" '{print $$3}' SGD_features.tab | sort | uniq -c > gene-types
 
 terminated-genes: 
-	grep -o '/G=[^ ]*' palinsreg.txt | cut -d = -f 2 | sort -u > terminated-genes
+	grep -o '/G=[^ ]*' palinsreg.txt | cut -d = -f 2 | \
+		sort -u > terminated-genes
 
 test:
 	pytest -xv ./test.py

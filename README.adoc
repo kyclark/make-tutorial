@@ -199,7 +199,7 @@ To turn that into an executable program you will need to have a `c` compiler on 
 We can use the `gcc` (GNU c compiler) with this command:
 
 ----
-$ gcc hello.o
+$ gcc hello.c
 ----
 
 That will create a file called `a.out` which is an executable file. 
